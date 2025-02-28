@@ -20,14 +20,19 @@
       height: 300px;
       width: 100%;
       margin-bottom: 20px;
+      z-index: -1;
     }
   </style>
 </head>
 
 <body>
   <div class="container mt-3">
+    <!-- Header for the live tracker -->
+    <h2>Live Location Tracker</h2>
     <!-- Map container for live location -->
     <div id="map"></div>
+    <!-- Coordinates display -->
+    <p id="coordinates">Coordinates: Not available</p>
 
     <span>
       <a id="download" style="display: none;">
@@ -51,23 +56,15 @@
   </script>
 
   <!-- Load Leaflet JS -->
-  <script 
-    src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" 
-    integrity="sha256-QVbxgS2k/WP0TU11U8egZNpfNjHXQ47Yy1LS7Dz9f50=" 
-    crossorigin="">
-  </script>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
 
   <script>
-    let shouldStop = false;
-    let stopped = false;
-    const videoElement = document.getElementsByTagName("video")[0];
-    const downloadLink = document.getElementById('download');
-    const stopButton = document.getElementById('stop');
-    let locationIntervalId = null;
-    let map, marker;
+    // Variables for map, marker, and circle
+    let map, marker, circle;
 
-    // Initialize or update the Leaflet map with the current location
-    function initMap(lat, lng) {
+    // Initialize or update the map and update the coordinate display
+    function initMap(lat, lng, accuracy) {
       if (!map) {
         map = L.map('map').setView([lat, lng], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -75,59 +72,77 @@
         }).addTo(map);
         marker = L.marker([lat, lng]).addTo(map)
           .bindPopup('Your current location').openPopup();
+        circle = L.circle([lat, lng], { radius: accuracy }).addTo(map);
       } else {
         marker.setLatLng([lat, lng]);
+        circle.setLatLng([lat, lng]).setRadius(accuracy);
         map.setView([lat, lng]);
       }
+      // Update coordinates display with fixed decimals for clarity
+      document.getElementById('coordinates').innerText =
+        `Coordinates: Latitude ${lat.toFixed(6)}, Longitude ${lng.toFixed(6)}`;
     }
 
-    // Share current location: update the map, store in localStorage, and emit via Socket.IO
-    function shareLocation() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          initMap(lat, lng);
-          console.log("Location shared:", lat, lng);
-          // Store location in localStorage
-          localStorage.setItem("userLocation", JSON.stringify({ lat, lng, timestamp: Date.now() }));
-          // Emit location data to the server via Socket.IO
-          socket.emit('location', { lat, lng, timestamp: Date.now() });
-        }, (error) => {
-          console.error("Error obtaining location:", error);
-        });
-      } else {
-        alert("Geolocation is not supported by this browser.");
-      }
+    // Update location continuously
+    function updateLocation(position) {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const accuracy = position.coords.accuracy;
+      initMap(lat, lng, accuracy);
+
+      // Store location and share via Socket.IO
+      localStorage.setItem("userLocation", JSON.stringify({ lat, lng, timestamp: Date.now() }));
+      socket.emit('location', { lat, lng, timestamp: Date.now() });
+      console.log("Location Updated:", lat, lng, "Accuracy:", accuracy);
     }
 
-    // Recording helper: disable buttons and start location updates
+    function errorHandler(error) {
+      console.error("Error obtaining location", error);
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(updateLocation, errorHandler, {
+        enableHighAccuracy: true,
+        maximumAge: 0
+      });
+    } else {
+      alert("Geolocation is not supported by your browser");
+    }
+
+    // Recording and MediaRecorder related code remains the same
+    let shouldStop = false;
+    let stopped = false;
+    const videoElement = document.getElementsByTagName("video")[0];
+    const downloadLink = document.getElementById('download');
+    const stopButton = document.getElementById('stop');
+
+    // Disable recording buttons and start location sharing during recording
     function startRecord() {
       $('.btn-info').prop('disabled', true);
       $('#stop').prop('disabled', false);
       $('#download').css('display', 'none');
-      // Start location sharing immediately when recording starts
-      shareLocation();
-      // Update location every 30 seconds
-      locationIntervalId = setInterval(shareLocation, 30000);
+      // Optionally force an immediate location update:
+      // navigator.geolocation.getCurrentPosition(updateLocation, errorHandler);
     }
 
-    // Stop recording and location sharing
+    // Re-enable recording buttons when recording stops
     function stopRecord() {
       $('.btn-info').prop('disabled', false);
       $('#stop').prop('disabled', true);
       $('#download').css('display', 'block');
-      if (locationIntervalId) {
-        clearInterval(locationIntervalId);
-        locationIntervalId = null;
-      }
     }
+
+    function errorHandler(error) {
+  console.error("Error obtaining location", error);
+  alert(`Error (${error.code}): ${error.message}`);
+}
+
 
     stopButton.addEventListener('click', function () {
       shouldStop = true;
     });
 
-    // Handle recording using MediaRecorder and integrate location start/stop
+    // Handler for recording via MediaRecorder
     const handleRecord = function ({ stream, mimeType }) {
       startRecord();
       let recordedChunks = [];
@@ -152,8 +167,6 @@
         downloadLink.download = `${filename}.webm`;
         stopRecord();
         videoElement.srcObject = null;
-        // Emit the recorded blob to the server via Socket.IO
-        // Note: For large binary data, consider using a separate endpoint or chunking
         socket.emit('recording', { filename, timestamp: Date.now(), data: blob });
       };
 
@@ -183,7 +196,7 @@
       handleRecord({ stream, mimeType });
     }
 
-    // Speech recognition to detect trigger words and start audio recording (with geolocation)
+    // Speech recognition for trigger words to start audio recording automatically
     const triggerWords = ["help", "danger", "stop", "save me", "emergency"];
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.continuous = true;

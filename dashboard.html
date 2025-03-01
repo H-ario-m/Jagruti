@@ -331,6 +331,7 @@
       window.open(whatsappUrl, "_blank");
     }
 
+
     async function shareFiles() {
       try {
         const files = [];
@@ -379,26 +380,44 @@
       });
     }
 
-    // --- Speech Recognition to trigger recording and location sharing ---
-    const triggerWords = ["help", "danger", "stop", "save me", "emergency"];
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.continuous = true;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
+   const triggerWords = ["help", "danger", "stop", "save me", "emergency"];
+const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+recognition.continuous = true;
+recognition.interimResults = false;
+recognition.lang = 'en-US';
 
-    recognition.onresult = (event) => {
-      const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
-      if (triggerWords.some(word => transcript.includes(word))) {
-        console.log("Trigger word detected! Starting recording and sending location...");
-        // Start recording automatically.
-        recordAudio();
-        recordVideo();
-        // Automatically share the location via WhatsApp.
-        sendViaWhatsApp();
-      }
-    };
+recognition.onresult = (event) => {
+    const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
+    console.log("Recognized Speech:", transcript); // Debugging log
 
-    recognition.start();
+    if (triggerWords.some(word => transcript.includes(word))) {
+        console.log("⚠ Trigger word detected! Starting recording & sending SMS...");
+
+        recordAudio(); // Start recording
+
+        fetch("http://localhost:5000/send-sms", {  // Ensure backend is running
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message: "Help me! I am in danger.",
+                to: "+917679501321"
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log("📩 SMS sent successfully:", data.messageSid);
+            } else {
+                console.error("⚠ Failed to send SMS:", data.error);
+            }
+        })
+        .catch(error => console.error("❌ Error sending SMS:", error));
+    }
+};
+
+recognition.start();
   </script>
 </body>
 </html>

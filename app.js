@@ -1,9 +1,11 @@
+// app.js
 const sign_in_btn = document.querySelector("#sign-in-btn");
 const sign_up_btn = document.querySelector("#sign-up-btn");
 const container = document.querySelector(".container");
 const signUpForm = document.querySelector(".sign-up-form");
 const signInForm = document.querySelector(".sign-in-form");
 
+// Animation to toggle sign-up mode
 sign_up_btn.addEventListener("click", () => {
   container.classList.add("sign-up-mode");
 });
@@ -12,6 +14,7 @@ sign_in_btn.addEventListener("click", () => {
   container.classList.remove("sign-up-mode");
 });
 
+// Use Firebase auth for sign-up
 signUpForm.addEventListener("submit", (event) => {
   event.preventDefault();
   
@@ -20,25 +23,33 @@ signUpForm.addEventListener("submit", (event) => {
   const password = signUpForm.querySelector("input[type='password']").value;
 
   if (username && email && password) {
-    localStorage.setItem("user", JSON.stringify({ username, email, password }));
-    alert("Sign-up successful! You can now log in.");
-    container.classList.remove("sign-up-mode");
+    signUpUser(email, password, username)
+      .then((user) => {
+        alert("Sign-up successful! You can now log in.");
+        container.classList.remove("sign-up-mode");
+      })
+      .catch((error) => {
+        alert("Error during sign-up: " + error.message);
+      });
   } else {
     alert("Please fill in all fields.");
   }
 });
 
+// Use Firebase auth for sign-in
 signInForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
-  const username = signInForm.querySelector("input[type='text']").value;
+  // Now selecting the email input field correctly.
+  const email = signInForm.querySelector("input[type='email']").value;
   const password = signInForm.querySelector("input[type='password']").value;
-  const storedUser = JSON.parse(localStorage.getItem("user"));
 
-  if (storedUser && storedUser.username === username && storedUser.password === password) {
-    alert("Login successful! Redirecting...");
-    window.location.href = "dashboard.html"; // Redirect to an empty page
-  } else {
-    alert("Invalid username or password. Please sign up first.");
-  }
+  signInUser(email, password)
+    .then((user) => {
+      alert("Login successful! Redirecting...");
+      window.location.href = "dashboard.html";
+    })
+    .catch((error) => {
+      alert("Error during sign-in: " + error.message);
+    });
 });

@@ -1,59 +1,35 @@
-// server.js
 const express = require('express');
-const nodemailer = require('nodemailer');
-const multer  = require('multer');
-const path = require('path');
+const cors = require('cors');
+const twilio = require('twilio');
 
 const app = express();
-const upload = multer({ dest: 'uploads/' });
-
-// Serve static files from the "public" directory
-app.use(express.static('public'));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(cors());
 
-// Configure your Nodemailer transporter (example uses Ethereal Email)
-const transporter = nodemailer.createTransport({
-  host: 'smtp.ethereal.email',
-  port: 587,
-  secure: false, // use TLS for port 587
-  auth: {
-    user: 'YOUR_ETHEREAL_USER@ethereal.email', // replace with your Ethereal user
-    pass: 'YOUR_ETHEREAL_PASSWORD'              // replace with your Ethereal password
-  }
+const accountSid = 'ACc8ccaedc1b39674d68bc836bbdc8d25e';
+const authToken = '6df9802b7fc2e5c5e856dd847e38378e';
+const client = twilio(accountSid, authToken);
+
+app.post('/send-sms', (req, res) => {
+    const { message, to } = req.body;
+
+    client.messages
+        .create({
+            body: 'help i am in danger',
+            from: '+18646616397',  // Your Twilio phone number
+            to: '+7679501321'                 // Recipient's phone number
+        })
+        .then(message => {
+            console.log('SMS Sent:', message.sid);
+            res.json({ success: true, messageSid: message.sid });
+        })
+        .catch(error => {
+            console.error('Error sending SMS:', error);
+            res.status(500).json({ success: false, error: error.message });
+        });
 });
 
-// Endpoint to receive the recorded file and location and send email
-app.post('/send-email', upload.single('recordedFile'), async (req, res) => {
-  try {
-    const location = req.body.location; // Should be a Google Maps URL
-    const file = req.file; // Uploaded file
-
-    let mailOptions = {
-      from: '"Anshuman" <anshumanojha91@gmail.com>',
-      to: 'anshuman.p24@medhaviskillsuniversity.edu.in',  // Replace with the recipient's email
-      subject: 'Recorded File & Location Data',
-      text: `Location: ${location}`,
-      html: `<p>Location: <a href="${location}">${location}</a></p>`,
-      attachments: []
-    };
-
-    if (file) {
-      mailOptions.attachments.push({
-        filename: file.originalname || 'recording.webm',
-        path: file.path
-      });
-    }
-
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent: ", info.messageId);
-    res.json({ success: true, messageId: info.messageId });
-  } catch (error) {
-    console.error("Error sending email:", error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-app.listen(3000, () => {
-  console.log("Server running on port 3000");
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flag Map with Leaflet</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    /* Body styling */
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      height: 100vh;
+      background-color: #f4f7fa;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Map container styling */
+    #map {
+      width: 100%;
+      max-width: 600px;  /* Make the map container wider for a rectangular shape */
+      height: 350px;     /* Set the height to make it rectangular */
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Button styling */
+    #flagBtn {
+      margin-top: 20px;
+      padding: 12px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Button hover effect */
+    #flagBtn:hover {
+      background-color: #0056b3;
+      transform: translateY(-2px);
+    }
+
+    /* Button focus effect */
+    #flagBtn:focus {
+      outline: none;
+      box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    }
+
+    /* Optional: Add a subtle background effect */
+    .container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  width: 100%;
+  max-width: 600px;  /* Set max width for a rectangular shape */
+  height: 400px;     /* Set a fixed height */
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="map"></div>
+    <button id="flagBtn">Flag Location</button>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    // Function to get the user's current location
+    function getUserLocation(callback) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          callback(lat, lng);
+        }, function() {
+          // Default to a fallback location (London) if geolocation fails
+          callback(51.505, -0.09);
+        });
+      } else {
+        // Default to a fallback location if geolocation is not supported
+        callback(51.505, -0.09);
+      }
+    }
+
+    // Initialize the map
+    let map;
+    getUserLocation(function(lat, lng) {
+      map = L.map('map').setView([lat, lng], 13); // Set to the user's location
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+      // Check if there are saved locations in localStorage
+      const savedLocations = JSON.parse(localStorage.getItem('locations')) || [];
+
+      // Add saved locations to the map as red circles
+      savedLocations.forEach(location => {
+        L.circle([location.lat, location.lng], {
+          color: 'red',
+          radius: 50
+        }).addTo(map);
+      });
+    });
+
+    // Flag button functionality
+    document.getElementById('flagBtn').onclick = () => {
+      map.once('click', function (e) {
+        // Save the clicked location to localStorage
+        const savedLocations = JSON.parse(localStorage.getItem('locations')) || [];
+        const newLocation = { lat: e.latlng.lat, lng: e.latlng.lng };
+        savedLocations.push(newLocation);
+        localStorage.setItem('locations', JSON.stringify(savedLocations));
+
+        // Add a red circle at the clicked location
+        L.circle([e.latlng.lat, e.latlng.lng], {
+          color: 'red',
+          radius: 50
+        }).addTo(map);
+      });
+    };
+  </script>
+</body>
+</html>

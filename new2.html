@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafetyQuest - Women Safety Learning Platform</title>
+    <script src="https://cdn.tailwindcs.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        
+        .neubrutalism {
+            border: 3px solid #000;
+            box-shadow: 5px 5px 0px #000;
+            transition: all 0.2s ease;
+        }
+        
+        .neubrutalism:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0px #000;
+        }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+        }
+
+        .score-animation {
+            animation: popScore 0.5s ease-out;
+        }
+
+        @keyframes popScore {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="bg-pink-100 min-h-screen">
+    <div class="loading bg-white p-6 rounded-lg neubrutalism">
+        <div class="animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent"></div>
+        <p class="mt-4">Processing video content...</p>
+    </div>
+
+    <nav class="bg-purple-500 p-4">
+        <div class="container mx-auto">
+            <h1 class="text-3xl font-bold text-white">SafetyQuest</h1>
+            <p class="text-white">Learn, Understand, Empower</p>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="max-w-3xl mx-auto space-y-8">
+            <!-- Course Input Section -->
+            <section class="bg-white p-6 rounded-lg neubrutalism">
+                <h2 class="text-2xl font-bold mb-4">Start Learning</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block mb-2">Your Name:</label>
+                        <input type="text" id="studentName" class="w-full p-2 border-2 border-black rounded neubrutalism" placeholder="Enter your name">
+                    </div>
+                    <div>
+                        <label class="block mb-2">Recommender's Email:</label>
+                        <input type="email" id="recommenderEmail" class="w-full p-2 border-2 border-black rounded neubrutalism" placeholder="Enter recommender's email">
+                    </div>
+                    <div>
+                        <label class="block mb-2">YouTube Video URL:</label>
+                        <input type="text" id="videoUrl" class="w-full p-2 border-2 border-black rounded neubrutalism" placeholder="Paste YouTube video URL">
+                    </div>
+                    <button onclick="processVideo()" class="bg-purple-500 text-white px-6 py-3 rounded neubrutalism hover:bg-purple-600">
+                        Generate Quiz
+                    </button>
+                </div>
+            </section>
+
+            <!-- Quiz Section -->
+            <section id="quizSection" class="hidden bg-white p-6 rounded-lg neubrutalism">
+                <h2 class="text-2xl font-bold mb-4">Quiz Time!</h2>
+                <div id="quizContent" class="space-y-4">
+                    <!-- Questions will be inserted here -->
+                </div>
+                <button onclick="submitQuiz()" class="mt-6 bg-green-500 text-white px-6 py-3 rounded neubrutalism hover:bg-green-600">
+                    Submit Answers
+                </button>
+            </section>
+
+            <!-- Results Section -->
+            <section id="resultsSection" class="hidden bg-white p-6 rounded-lg neubrutalism">
+                <h2 class="text-2xl font-bold mb-4">Your Results</h2>
+                <div class="text-center">
+                    <p class="text-4xl font-bold text-purple-500 score-animation" id="scoreDisplay">0</p>
+                    <p class="text-xl mt-2">points earned!</p>
+                </div>
+                <div class="mt-6 space-y-4">
+                    <p id="feedback" class="text-lg"></p>
+                    <button onclick="restartQuiz()" class="bg-blue-500 text-white px-6 py-3 rounded neubrutalism hover:bg-blue-600">
+                        Try Another Video
+                    </button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        let currentQuestions = [];
+        
+        async function processVideo() {
+            const videoUrl = document.getElementById('videoUrl').value;
+            const studentName = document.getElementById('studentName').value;
+            const recommenderEmail = document.getElementById('recommenderEmail').value;
+
+            if (!videoUrl || !studentName || !recommenderEmail) {
+                alert('Please fill in all fields!');
+                return;
+            }
+
+            // Show loading animation
+            document.querySelector('.loading').style.display = 'block';
+
+            try {
+                // Simulate AI processing with the video URL
+                const prompt = `Analyze this video about women's safety: ${videoUrl} and generate 5 multiple choice questions`;
+                
+                const response = await fetch('https://r0c8kgwocscg8gsokogwwsw4.zetaverse.one/ai', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer sRJNCQmo6mfJmAPo0UDXXSOo2b32',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        messages: [{
+                            role: 'user',
+                            content: [{
+                                type: 'text',
+                                text: prompt
+                            }]
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+                
+                // Parse the AI response and create questions
+                currentQuestions = generateQuestions(data.message);
+                displayQuiz(currentQuestions);
+                
+                document.querySelector('.loading').style.display = 'none';
+                document.getElementById('quizSection').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error processing video. Please try again.');
+                document.querySelector('.loading').style.display = 'none';
+            }
+        }
+
+        function generateQuestions(aiResponse) {
+            // For demo purposes, generating sample questions
+            return [
+                {
+                    question: "What is the first step in ensuring personal safety?",
+                    options: ["Stay aware of surroundings", "Ignore gut feelings", "Walk alone at night", "None of the above"],
+                    correct: 0
+                },
+                {
+                    question: "Which of these is a recommended safety practice?",
+                    options: ["Share location with trusted contacts", "Keep personal information public", "Trust strangers easily", "Walk in dark alleys"],
+                    correct: 0
+                },
+                {
+                    question: "What should you do if you feel unsafe?",
+                    options: ["Keep it to yourself", "Call for help immediately", "Ignore the feeling", "Continue as normal"],
+                    correct: 1
+                },
+                {
+                    question: "Which is an important aspect of digital safety?",
+                    options: ["Share passwords freely", "Accept all friend requests", "Use strong, unique passwords", "Post personal details online"],
+                    correct: 2
+                },
+                {
+                    question: "What is a key element of bystander intervention?",
+                    options: ["Ignore the situation", "Direct confrontation only", "Assess the situation safely", "Walk away quickly"],
+                    correct: 2
+                }
+            ];
+        }
+
+        function displayQuiz(questions) {
+            const quizContent = document.getElementById('quizContent');
+            quizContent.innerHTML = '';
+
+            questions.forEach((q, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'mb-6 p-4 bg-purple-50 rounded neubrutalism';
+                
+                questionDiv.innerHTML = `
+                    <p class="font-bold mb-3">${index + 1}. ${q.question}</p>
+                    <div class="space-y-2">
+                        ${q.options.map((option, i) => `
+                            <div class="flex items-center">
+                                <input type="radio" name="q${index}" value="${i}" id="q${index}o${i}" class="mr-2">
+                                <label for="q${index}o${i}">${option}</label>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+
+                quizContent.appendChild(questionDiv);
+            });
+        }
+
+        function submitQuiz() {
+            let score = 0;
+            currentQuestions.forEach((q, index) => {
+                const selected = document.querySelector(`input[name="q${index}"]:checked`);
+                if (selected && parseInt(selected.value) === q.correct) {
+                    score++;
+                }
+            });
+
+            // Display results
+            document.getElementById('quizSection').classList.add('hidden');
+            document.getElementById('resultsSection').classList.remove('hidden');
+            document.getElementById('scoreDisplay').textContent = score;
+            
+            const feedback = document.getElementById('feedback');
+            if (score === currentQuestions.length) {
+                feedback.textContent = "Perfect score! You've shown excellent understanding of women's safety concepts!";
+            } else if (score >= currentQuestions.length * 0.7) {
+                feedback.textContent = "Great job! You have a good grasp of women's safety principles.";
+            } else {
+                feedback.textContent = "Keep learning! Review the material and try again to improve your understanding.";
+            }
+
+            // Simulate sending score to recommender
+            const recommenderEmail = document.getElementById('recommenderEmail').value;
+            const studentName = document.getElementById('studentName').value;
+            console.log(`Score ${score}/${currentQuestions.length} sent to ${recommenderEmail} for student ${studentName}`);
+        }
+
+        function restartQuiz() {
+            document.getElementById('videoUrl').value = '';
+            document.getElementById('resultsSection').classList.add('hidden');
+            document.getElementById('quizSection').classList.add('hidden');
+            window.scrollTo(0, 0);
+        }
+    </script>
+</body>
+</html>

@@ -1,423 +1,345 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Recorder v2.2 with Live Location Sharing & Socket.IO</title>
-  
-  <!-- Bootstrap CSS -->
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
-  
-  <!-- Leaflet CSS -->
-  <link 
-    rel="stylesheet" 
-    href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
-    crossorigin=""
-  />
+ <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+ <title>Live Tracker & Recorder Dashboard</title>
+ 
+ <!-- Bootstrap CSS -->
+ <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" />
 
-  <!-- jQuery & Bootstrap JS -->
-  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+ <!-- Leaflet CSS -->
+ <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" crossorigin="" />
 
-  <style>
-    body {
-      background-color: #f8f9fa;
-    }
-    .container {
-      max-width: 800px;
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    }
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    #map {
-      height: 300px;
-      width: 100%;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-    #coordinates {
-      font-size: 16px;
-      font-weight: 500;
-      text-align: center;
-      margin-bottom: 15px;
-    }
-    .btn-group {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-    }
-    .video-container {
-      display: flex;
-      justify-content: center;
-      margin-top: 20px;
-    }
-    video {
-      border-radius: 8px;
-      border: 2px solid #ddd;
-    }
-    .download-buttons {
-      display: none;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 20px;
-    }
-  </style>
+ <style>
+ body { background-color: #f8f9fa; }
+ .container {
+ max-width: 800px;
+ background: #fff;
+ padding: 20px;
+ margin-top: 40px;
+ align-items: center;
+ justify-content: center;
+ margin-bottom: 50px;
+ border-radius: 10px;
+ box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+ }
+ .btn btn-warning { margin-top: 20px; justify-content: center;}
+ h2,h3 { text-align: center; margin-bottom: 20px; }
+ #map { height: 300px; width: 100%; border-radius: 8px; margin-bottom: 20px; }
+ #coordinates { font-size: 16px; font-weight: 500; text-align: center; margin-bottom: 15px; }
+ .btn-group { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+ .video-container { display: flex; justify-content: center; margin-top: 20px; }
+ video { border-radius: 8px; border: 2px solid #ddd; }
+ .download-buttons {
+ display: none; 
+ justify-content: center; 
+ gap: 10px; 
+ margin-top: 20px;
+ }
+ </style>
 </head>
 
 <body>
-  <div class="container mt-4">
-    <h2>Live Location Tracker & Recorder</h2>
+ <div class="container">
+ <h2>Live Location Tracker & Recorder</h2>
+ <div id="map"></div>
+ <p id="coordinates">Coordinates: Not available</p>
 
-    <div id="map"></div>
-    <p id="coordinates">Coordinates: Not available</p>
+ <div class="btn-group">
+ <!-- Recording Buttons -->
+ <button type="button" class="btn btn-danger" id="stop" disabled>Stop</button>
+ <button type="button" onclick="recordAudio()" class="btn btn-info">Record Audio</button>
+ <button type="button" onclick="recordVideo()" class="btn btn-info">Record Video</button>
+ <button type="button" onclick="recordScreen()" class="btn btn-info">Record Screen</button>
+ <!-- Integration Buttons -->
+ <button type="button" onclick="sendViaWhatsApp()" class="btn btn-warning">SOS WhatsApp</button>
+ <button type="button" onclick="shareFiles()" class="btn btn-primary">Share Files</button>
+ <button id="sendSmsButton" type="button" class="btn btn-danger" onclick="triggerSMS()">Send SMS</button>
+ <button type="button" class="btn btn-danger" onclick="window.location.href='flag.html';">Flag Map</button>
+ </div>
 
-    <div class="btn-group">
-      <button type="button" class="btn btn-danger" id="stop" disabled>Stop</button>
-      <button type="button" onclick="recordAudio()" class="btn btn-info">Record Audio</button>
-      <button type="button" onclick="recordVideo()" class="btn btn-info">Record Video</button>
-      <button type="button" onclick="recordScreen()" class="btn btn-info">Record Screen</button>
-      <!-- Buttons for WhatsApp and Email functionality -->
-      <button type="button" onclick="sendViaWhatsApp()" class="btn btn-warning">SOS Whatsapp</button>
-      <button type="button" onclick="shareFiles()" class="btn btn-primary">Share Files</button>
-      <button type="button" onclick="sendEmail()" class="btn btn-secondary">Send Email</button>
-      <button type="button" class="btn btn-danger" onclick="window.location.href='flag.html';">Flag Map</button>
-    </div>
+ <div class="download-buttons" id="downloadButtons">
+ <button type="button" onclick="downloadAudio()" class="btn btn-success">Download Audio</button>
+ <button type="button" onclick="downloadVideo()" class="btn btn-success">Download Video</button>
+ <button type="button" onclick="downloadScreen()" class="btn btn-success">Download Screen</button>
+ </div>
 
-    <div class="download-buttons" id="downloadButtons">
-      <button type="button" onclick="downloadAudio()" class="btn btn-success">Download Audio</button>
-      <button type="button" onclick="downloadVideo()" class="btn btn-success">Download Video</button>
-      <button type="button" onclick="downloadScreen()" class="btn btn-success">Download Screen</button>
-    </div>
+ <div class="video-container">
+ <video autoplay height="240" width="320" muted></video>
+ </div>
+ </div>
+ <div class="container">
+    <H3>Why women, why not men?
+    </H3>
+    <button class="btn btn-warning" onclick="window.location.href='new.html';">Solution</button>
+ </div>
 
-    <div class="video-container">
-      <video autoplay height="240" width="320" muted></video>
-    </div>
-  </div>
+ <!-- Load Socket.IO (if needed) -->
+ <script src="/socket.io/socket.io.js"></script>
+ <script> const socket = io(); </script>
 
-  <!-- Load Socket.IO client library -->
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-  </script>
+ <!-- Load Leaflet JS -->
+ <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-  <!-- Load Leaflet JS -->
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+ <!-- Main JavaScript -->
+ <script>
+ /* ----- Map & Location Tracking ----- */
+ let map, marker, circle;
+ function initMap(lat, lng, accuracy) {
+ if (!map) {
+ map = L.map('map').setView([lat, lng], 15);
+ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+ attribution: '&copy; OpenStreetMap contributors'
+ }).addTo(map);
+ marker = L.marker([lat, lng]).addTo(map).bindPopup('Your current location').openPopup();
+ circle = L.circle([lat, lng], { radius: accuracy }).addTo(map);
+ } else {
+ marker.setLatLng([lat, lng]);
+ circle.setLatLng([lat, lng]).setRadius(accuracy);
+ map.setView([lat, lng]);
+ }
+ document.getElementById('coordinates').innerText =
+ `Coordinates: Latitude ${lat.toFixed(6)}, Longitude ${lng.toFixed(6)}`;
+ }
+ function updateLocation(position) {
+ const lat = position.coords.latitude;
+ const lng = position.coords.longitude;
+ const accuracy = position.coords.accuracy;
+ initMap(lat, lng, accuracy);
+ localStorage.setItem("userLocation", JSON.stringify({ lat, lng, timestamp: Date.now() }));
+ socket.emit('location', { lat, lng, timestamp: Date.now() });
+ console.log("Location Updated:", lat, lng, "Accuracy:", accuracy);
+ }
+ function errorHandler(error) {
+ console.error("Error obtaining location", error);
+ alert(`Error (${error.code}): ${error.message}`);
+ }
+ if (navigator.geolocation) {
+ navigator.geolocation.watchPosition(updateLocation, errorHandler, { enableHighAccuracy: true, maximumAge: 0 });
+ } else {
+ alert("Geolocation is not supported by your browser");
+ }
 
-  <script>
-    let map, marker, circle;
-    // Global flag to control when recording should permanently stop.
-    let shouldStop = false;
-    let stopped = false;
+ /* ----- Recording & Auto-Split Functionality ----- */
+ const videoElement = document.getElementsByTagName("video")[0];
+ const stopButton = document.getElementById('stop');
+ const downloadButtons = document.getElementById('downloadButtons');
+ let shouldStop = false, stopped = false;
+ let audioBlob, videoBlob, screenBlob;
 
-    function initMap(lat, lng, accuracy) {
-      if (!map) {
-        map = L.map('map').setView([lat, lng], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-        marker = L.marker([lat, lng]).addTo(map)
-          .bindPopup('Your current location').openPopup();
-        circle = L.circle([lat, lng], { radius: accuracy }).addTo(map);
-      } else {
-        marker.setLatLng([lat, lng]);
-        circle.setLatLng([lat, lng]).setRadius(accuracy);
-        map.setView([lat, lng]);
-      }
-      document.getElementById('coordinates').innerText =
-        `Coordinates: Latitude ${lat.toFixed(6)}, Longitude ${lng.toFixed(6)}`;
-    }
+ function startRecord() {
+ document.querySelectorAll('.btn-info').forEach(btn => btn.disabled = true);
+ stopButton.disabled = false;
+ downloadButtons.style.display = 'none';
+ }
+ function stopRecord() {
+ document.querySelectorAll('.btn-info').forEach(btn => btn.disabled = false);
+ stopButton.disabled = true;
+ downloadButtons.style.display = 'flex';
+ }
+ stopButton.addEventListener('click', function () { shouldStop = true; });
 
-    function updateLocation(position) {
-      const lat = position.coords.latitude;
-      const lng = position.coords.longitude;
-      const accuracy = position.coords.accuracy;
-      initMap(lat, lng, accuracy);
+ // This function handles recording segments and auto-splitting them.
+ const handleRecord = function({ stream, mimeType, type, autoSplit = true }) {
+ startRecord();
+ let recordedChunks = [];
+ stopped = false;
+ const mediaRecorder = new MediaRecorder(stream);
+ let overallTimer, inactivityTimer;
+ const stopSegment = () => {
+ if (!stopped) {
+ mediaRecorder.stop();
+ stopped = true;
+ clearTimeout(overallTimer);
+ clearTimeout(inactivityTimer);
+ startRecord();
+ }
+ };
+ overallTimer = setTimeout(() => { console.log("Overall timer reached 1 minute."); stopSegment(); }, 60000);
+ inactivityTimer = setTimeout(() => { console.log("Inactivity timer reached 1 minute."); stopSegment(); }, 60000);
+ mediaRecorder.ondataavailable = function(e) {
+ if (e.data.size > 0) {
+ recordedChunks.push(e.data);
+ clearTimeout(inactivityTimer);
+ inactivityTimer = setTimeout(() => { console.log("Inactivity timer reset reached 1 minute."); stopSegment(); }, 60000);
+ }
+ if (shouldStop && !stopped) { stopSegment(); }
+ };
+ mediaRecorder.onstop = function() {
+ const blob = new Blob(recordedChunks, { type: mimeType });
+ recordedChunks = [];
+ if (type === 'audio') { audioBlob = blob; }
+ else if (type === 'video') { videoBlob = blob; }
+ else if (type === 'screen') { screenBlob = blob; }
+ stopRecord();
+ videoElement.srcObject = null;
+ socket.emit('recording', { type, timestamp: Date.now(), data: blob });
+ autoSendFile(blob, type);
+ if (autoSplit && !shouldStop) {
+ setTimeout(() => { handleRecord({ stream, mimeType, type, autoSplit: true }); }, 500);
+ }
+ };
+ mediaRecorder.start(200);
+ };
 
-      localStorage.setItem("userLocation", JSON.stringify({ lat, lng, timestamp: Date.now() }));
-      socket.emit('location', { lat, lng, timestamp: Date.now() });
-      console.log("Location Updated:", lat, lng, "Accuracy:", accuracy);
-    }
+ async function recordAudio() {
+ const mimeType = 'audio/webm';
+ shouldStop = false;
+ const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true } });
+ handleRecord({ stream, mimeType, type: 'audio', autoSplit: true });
+ // Optionally trigger WhatsApp sharing when recording starts.
+ // sendViaWhatsApp();
+ }
+ async function recordVideo() {
+ const mimeType = 'video/webm';
+ shouldStop = false;
+ const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+ videoElement.srcObject = stream;
+ handleRecord({ stream, mimeType, type: 'video', autoSplit: true });
+ }
+ async function recordScreen() {
+ const mimeType = 'video/webm';
+ shouldStop = false;
+ const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+ videoElement.srcObject = stream;
+ handleRecord({ stream, mimeType, type: 'screen', autoSplit: true });
+ }
+ // Download functions for manual downloads.
+ function downloadAudio() {
+ const url = URL.createObjectURL(audioBlob);
+ const a = document.createElement('a');
+ a.href = url;
+ a.download = `audio_recording_${Date.now()}.webm`;
+ a.click();
+ }
+ function downloadVideo() {
+ const url = URL.createObjectURL(videoBlob);
+ const a = document.createElement('a');
+ a.href = url;
+ a.download = `video_recording_${Date.now()}.webm`;
+ a.click();
+ }
+ function downloadScreen() {
+ const url = URL.createObjectURL(screenBlob);
+ const a = document.createElement('a');
+ a.href = url;
+ a.download = `screen_recording_${Date.now()}.webm`;
+ a.click();
+ }
+ // Automatically send the recorded file (for example, trigger a download).
+ function autoSendFile(blob, type) {
+ const url = URL.createObjectURL(blob);
+ const a = document.createElement('a');
+ a.href = url;
+ a.download = `${type}_recording_${Date.now()}.webm`;
+ document.body.appendChild(a);
+ a.click();
+ document.body.removeChild(a);
+ }
 
-    function errorHandler(error) {
-      console.error("Error obtaining location", error);
-      alert(`Error (${error.code}): ${error.message}`);
-    }
+ /* ----- WhatsApp Integration ----- */
+ function sendViaWhatsApp() {
+ const phoneNumber = "7782946485"; // Replace with recipient's WhatsApp number
+ const location = JSON.parse(localStorage.getItem("userLocation"));
+ if (!location) {
+ alert("Location not available yet!");
+ return;
+ }
+ const message = `Emergency! My current location: https://www.google.com/maps?q=${location.lat},${location.lng}`;
+ const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+ window.open(whatsappUrl, "_blank");
+ }
 
-    if (navigator.geolocation) {
-      navigator.geolocation.watchPosition(updateLocation, errorHandler, {
-        enableHighAccuracy: true,
-        maximumAge: 0
-      });
-    } else {
-      alert("Geolocation is not supported by your browser");
-    }
+ /* ----- File Sharing via Web Share API ----- */
+ async function shareFiles() {
+ try {
+ const files = [];
+ if (audioBlob) files.push(new File([audioBlob], "audio_recording.webm", { type: "audio/webm" }));
+ if (videoBlob) files.push(new File([videoBlob], "video_recording.webm", { type: "video/webm" }));
+ if (screenBlob) files.push(new File([screenBlob], "screen_recording.webm", { type: "video/webm" }));
+ if (files.length > 0 && navigator.canShare && navigator.canShare({ files })) {
+ await navigator.share({ files, title: "Recorded Files", text: "Here are the recorded files." });
+ } else {
+ alert("File sharing is not supported on this device!");
+ }
+ } catch (error) {
+ console.error("Error sharing files:", error);
+ }
+ }
 
-    const videoElement = document.getElementsByTagName("video")[0];
-    const stopButton = document.getElementById('stop');
-    const downloadButtons = document.getElementById('downloadButtons');
+ /* ----- Email Integration ----- */
+ function sendEmail() {
+ const locationData = JSON.parse(localStorage.getItem("userLocation"));
+ if (!locationData) {
+ alert("No location available");
+ return;
+ }
+ const formData = new FormData();
+ const blob = videoBlob || audioBlob || screenBlob;
+ if (blob) { formData.append('recordedFile', blob, 'recording.webm'); }
+ const locationURL = `https://www.google.com/maps?q=${locationData.lat},${locationData.lng}`;
+ formData.append('location', locationURL);
+ fetch('/send-email', { method: 'POST', body: formData })
+ .then(response => response.json())
+ .then(data => { console.log('Email sent:', data); alert('Email sent successfully'); })
+ .catch(error => { console.error('Error sending email:', error); alert('Error sending email'); });
+ }
 
-    // These blobs hold the last segment’s data
-    let audioBlob, videoBlob, screenBlob;
+ /* ----- SMS Trigger Function ----- */
+ function triggerSMS() {
+ const smsButton = document.getElementById('sendSmsButton');
+ smsButton.disabled = true;
+ smsButton.textContent = 'Sending...';
 
-    function startRecord() {
-      $('.btn-info').prop('disabled', true);
-      $('#stop').prop('disabled', false);
-      downloadButtons.style.display = 'none';
-    }
+ const locationData = JSON.parse(localStorage.getItem("userLocation"));
+ const message = `HELP! I'm in danger! Location: ${locationData ? 
+ `https://maps.google.com?q=${locationData.lat},${locationData.lng}` : 
+ 'Location unavailable'}`;
 
-    function stopRecord() {
-      $('.btn-info').prop('disabled', false);
-      $('#stop').prop('disabled', true);
-      downloadButtons.style.display = 'flex';
-    }
+ fetch("http://localhost:3000/send-sms", { // Use full URL for testing
+ method: "POST",
+ headers: { "Content-Type": "application/json" },
+ body: JSON.stringify({
+ message: message,
+ to: "+917679501321"
+ })
+ })
+ .then(response => {
+ console.log('HTTP status:', response.status);
+ return response.json().catch(() => null);
+ })
+ .then(data => {
+ if (!data) throw new Error('Empty server response');
+ if (!data.success) throw new Error(data.error || 'Unknown server error');
+ alert("SMS sent successfully!");
+ })
+ .catch(error => {
+ console.error("Full error:", error);
+ alert(`Failed: ${error.message}`);
+ })
+ .finally(() => {
+ smsButton.disabled = false;
+ smsButton.textContent = 'Send SMS';
+ });
+}
 
-    // Listen to the manual stop button.
-    stopButton.addEventListener('click', function () {
-      shouldStop = true;
-    });
-
-    // This function automatically downloads (or “sends”) the recorded segment.
-    function autoSendFile(blob, type) {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${type}_recording_${Date.now()}.webm`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      // Optionally, you could trigger email sending here as well.
-    }
-
-    // Modified handleRecord function that supports auto-splitting.
-    const handleRecord = function ({ stream, mimeType, type, autoSplit = true }) {
-      startRecord();
-      let recordedChunks = [];
-      stopped = false;
-      const mediaRecorder = new MediaRecorder(stream);
-      let overallTimer, inactivityTimer;
-
-      // Function to stop the current recording segment.
-      const stopSegment = () => {
-        if (!stopped) {
-          mediaRecorder.stop();
-          stopped = true;
-          clearTimeout(overallTimer);
-          clearTimeout(inactivityTimer);
-          startRecord();
-        }
-      };
-
-      // Set overall timer for 1 minute.
-      overallTimer = setTimeout(() => {
-        console.log("Overall timer reached 1 minute. Stopping segment.");
-        stopSegment();
-      }, 60000);
-
-      // Set inactivity timer for 1 minute.
-      inactivityTimer = setTimeout(() => {
-        console.log("Inactivity timer reached 1 minute. Stopping segment.");
-        stopSegment();
-      }, 60000);
-
-      mediaRecorder.ondataavailable = function (e) {
-        if (e.data.size > 0) {
-          recordedChunks.push(e.data);
-          // Reset inactivity timer on each data event.
-          clearTimeout(inactivityTimer);
-          inactivityTimer = setTimeout(() => {
-            console.log("Inactivity timer reached 1 minute (reset). Stopping segment.");
-            stopSegment();
-          }, 60000);
-        }
-        if (shouldStop && !stopped) {
-          stopSegment();
-        }
-      };
-
-      mediaRecorder.onstop = function () {
-        const blob = new Blob(recordedChunks, { type: mimeType });
-        recordedChunks = [];
-        if (type === 'audio') {
-          audioBlob = blob;
-        } else if (type === 'video') {
-          videoBlob = blob;
-        } else if (type === 'screen') {
-          screenBlob = blob;
-        }
-        stopRecord();
-        videoElement.srcObject = null;
-        socket.emit('recording', { type, timestamp: Date.now(), data: blob });
-        // Automatically download the segment.
-        autoSendFile(blob, type);
-        // If autoSplit is enabled and the user has not pressed stop, resume recording.
-        if (autoSplit && !shouldStop) {
-          setTimeout(() => {
-            handleRecord({ stream, mimeType, type, autoSplit: true });
-          }, 500);
-        }
-      };
-
-      mediaRecorder.start(200);
-    };
-
-    // Updated recording functions to use the new auto-split functionality.
-    async function recordAudio() {
-      const mimeType = 'audio/webm';
-      shouldStop = false;
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true } });
-      handleRecord({ stream, mimeType, type: 'audio', autoSplit: true });
-      // Automatically share location via WhatsApp on recording start.
-      sendViaWhatsApp();
-    }
-
-    async function recordVideo() {
-      const mimeType = 'video/webm';
-      shouldStop = false;
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      videoElement.srcObject = stream;
-      handleRecord({ stream, mimeType, type: 'video', autoSplit: true });
-    }
-
-    async function recordScreen() {
-      const mimeType = 'video/webm';
-      shouldStop = false;
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-      videoElement.srcObject = stream;
-      handleRecord({ stream, mimeType, type: 'screen', autoSplit: true });
-    }
-
-    // Manual download functions.
-    function downloadAudio() {
-      const url = URL.createObjectURL(audioBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `audio_recording_${Date.now()}.webm`;
-      a.click();
-    }
-
-    function downloadVideo() {
-      const url = URL.createObjectURL(videoBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `video_recording_${Date.now()}.webm`;
-      a.click();
-    }
-
-    function downloadScreen() {
-      const url = URL.createObjectURL(screenBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `screen_recording_${Date.now()}.webm`;
-      a.click();
-    }
-
-    // --- WhatsApp Integration Functions ---
-    function sendViaWhatsApp() {
-      const phoneNumber = "7782946485"; // Replace with recipient's WhatsApp number (international format if needed)
-      const location = JSON.parse(localStorage.getItem("userLocation"));
-      if (!location) {
-        alert("Location not available yet!");
-        return;
-      }
-      const message = `Emergency! My current location: https://www.google.com/maps?q=${location.lat},${location.lng}`;
-      const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-      window.open(whatsappUrl, "_blank");
-    }
-
-
-    async function shareFiles() {
-      try {
-        const files = [];
-        if (audioBlob) files.push(new File([audioBlob], "audio_recording.webm", { type: "audio/webm" }));
-        if (videoBlob) files.push(new File([videoBlob], "video_recording.webm", { type: "video/webm" }));
-        if (screenBlob) files.push(new File([screenBlob], "screen_recording.webm", { type: "video/webm" }));
-
-        if (files.length > 0 && navigator.canShare && navigator.canShare({ files })) {
-          await navigator.share({ files, title: "Recorded Files", text: "Here are the recorded files." });
-        } else {
-          alert("File sharing is not supported on this device!");
-        }
-      } catch (error) {
-        console.error("Error sharing files:", error);
-      }
-    }
-
-    // --- Function to send recorded file and location via Email ---
-    function sendEmail() {
-      const locationData = JSON.parse(localStorage.getItem("userLocation"));
-      if (!locationData) {
-        alert("No location available");
-        return;
-      }
-      const formData = new FormData();
-      // For example, choose videoBlob if available, otherwise audio or screen.
-      const blob = videoBlob || audioBlob || screenBlob;
-      if (blob) {
-        formData.append('recordedFile', blob, 'recording.webm');
-      }
-      const locationURL = `https://www.google.com/maps?q=${locationData.lat},${locationData.lng}`;
-      formData.append('location', locationURL);
-
-      fetch('/send-email', {
-        method: 'POST',
-        body: formData
-      })
-      .then(response => response.json())
-      .then(data => {
-        console.log('Email sent:', data);
-        alert('Email sent successfully');
-      })
-      .catch(error => {
-        console.error('Error sending email:', error);
-        alert('Error sending email');
-      });
-    }
-
-   const triggerWords = ["help", "danger", "stop", "save me", "emergency"];
-const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-recognition.continuous = true;
-recognition.interimResults = false;
-recognition.lang = 'en-US';
-
-recognition.onresult = (event) => {
-    const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
-    console.log("Recognized Speech:", transcript); // Debugging log
-
-    if (triggerWords.some(word => transcript.includes(word))) {
-        console.log("⚠ Trigger word detected! Starting recording & sending SMS...");
-
-        recordAudio(); // Start recording
-
-        fetch("http://localhost:5000/send-sms", {  // Ensure backend is running
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                message: "Help me! I am in danger.",
-                to: "+917679501321"
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                console.log("📩 SMS sent successfully:", data.messageSid);
-            } else {
-                console.error("⚠ Failed to send SMS:", data.error);
-            }
-        })
-        .catch(error => console.error("❌ Error sending SMS:", error));
-    }
-};
-
-recognition.start();
-  </script>
+ /* ----- Speech Recognition for Trigger Words (Optional) ----- */
+ const triggerWords = ["help", "danger", "stop", "save me", "emergency"];
+ const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+ recognition.continuous = true;
+ recognition.interimResults = false;
+ recognition.lang = 'en-US';
+ recognition.onresult = (event) => {
+ const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
+ console.log("Recognized Speech:", transcript);
+ if (triggerWords.some(word => transcript.includes(word))) {
+ console.log("Trigger word detected! Starting recording & sending SMS...");
+ recordAudio();
+ triggerSMS();
+ }
+ };
+ recognition.start();
+ </script>
 </body>
 </html>

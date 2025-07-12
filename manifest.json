@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Universal Video Skip Buttons",
+  "version": "1.0.0",
+  "description": "Adds 10-second forward and backward skip buttons to any video player (YouTube, Vimeo, Netflix, etc.)",
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_end",
+      "all_frames": true
+    }
+  ],
+  "permissions": [],
+  "host_permissions": ["<all_urls>"]
+}

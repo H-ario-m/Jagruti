@@ -1,0 +1,276 @@
+/**
+ * Universal Video Skip Buttons - Styles
+ * Adaptive styling for any video player
+ */
+
+/* Base container styling */
+.uvs-skip-buttons-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 9999;
+  transition: opacity 0.25s ease;
+}
+
+/* Base button styling */
+.uvs-skip-button {
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 8px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.9;
+  transition: all 0.15s ease;
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+}
+
+.uvs-skip-button:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.85);
+  transform: scale(1.05);
+}
+
+.uvs-skip-button:active {
+  transform: scale(0.95);
+  background: rgba(0, 0, 0, 0.95);
+}
+
+.uvs-skip-button svg {
+  width: 24px;
+  height: 24px;
+  pointer-events: none;
+}
+
+/* Focus states for accessibility */
+.uvs-skip-button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 2px;
+}
+
+/* Overlay mode (for generic video players) */
+.uvs-skip-buttons-container.uvs-overlay-mode {
+  position: absolute;
+  bottom: 60px;
+  left: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.uvs-skip-buttons-container.uvs-overlay-mode.uvs-visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Platform-specific adjustments */
+
+/* YouTube */
+.uvs-platform-youtube {
+  margin: 0 4px;
+}
+
+.uvs-platform-youtube .uvs-skip-button {
+  background: transparent;
+  width: 40px;
+  height: 40px;
+  border-radius: 2px;
+  backdrop-filter: none;
+}
+
+.uvs-platform-youtube .uvs-skip-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Match YouTube's control fade */
+.ytp-autohide .uvs-platform-youtube,
+.ytp-user-inactive .uvs-platform-youtube {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Vimeo */
+.uvs-platform-vimeo {
+  margin: 0 8px;
+}
+
+.uvs-platform-vimeo .uvs-skip-button {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 3px;
+}
+
+.uvs-platform-vimeo .uvs-skip-button:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+/* Netflix */
+.uvs-platform-netflix {
+  margin: 0 10px;
+}
+
+.uvs-platform-netflix .uvs-skip-button {
+  background: rgba(20, 20, 20, 0.7);
+  border-radius: 4px;
+  width: 42px;
+  height: 42px;
+}
+
+.uvs-platform-netflix .uvs-skip-button:hover {
+  background: rgba(20, 20, 20, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+/* Twitch */
+.uvs-platform-twitch {
+  margin: 0 5px;
+}
+
+.uvs-platform-twitch .uvs-skip-button {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 4px;
+}
+
+.uvs-platform-twitch .uvs-skip-button:hover {
+  background: rgba(145, 71, 255, 0.4);
+}
+
+/* Twitter/X */
+.uvs-platform-twitter.uvs-overlay-mode {
+  bottom: 50px;
+  left: 15px;
+}
+
+.uvs-platform-twitter .uvs-skip-button {
+  background: rgba(0, 0, 0, 0.75);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+}
+
+/* Reddit */
+.uvs-platform-reddit.uvs-overlay-mode {
+  bottom: 45px;
+  left: 15px;
+}
+
+.uvs-platform-reddit .uvs-skip-button {
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 4px;
+}
+
+/* Generic fallback */
+.uvs-platform-generic.uvs-overlay-mode {
+  bottom: 50px;
+  left: 15px;
+}
+
+.uvs-platform-generic .uvs-skip-button {
+  background: rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.uvs-platform-generic .uvs-skip-button:hover {
+  background: rgba(0, 0, 0, 0.9);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Fullscreen adjustments */
+:fullscreen .uvs-skip-button,
+:-webkit-full-screen .uvs-skip-button,
+:-moz-full-screen .uvs-skip-button {
+  width: 48px;
+  height: 48px;
+}
+
+:fullscreen .uvs-skip-button svg,
+:-webkit-full-screen .uvs-skip-button svg,
+:-moz-full-screen .uvs-skip-button svg {
+  width: 28px;
+  height: 28px;
+}
+
+/* Mobile/touch device support */
+@media (hover: none) and (pointer: coarse) {
+  .uvs-skip-button {
+    min-width: 48px;
+    min-height: 48px;
+    padding: 10px;
+  }
+
+  .uvs-skip-buttons-container.uvs-overlay-mode {
+    bottom: 70px;
+    left: 10px;
+  }
+}
+
+/* Small screen adjustments */
+@media (max-width: 768px) {
+  .uvs-skip-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .uvs-skip-buttons-container {
+    gap: 2px;
+  }
+}
+
+/* Prevent interference with native controls */
+.uvs-skip-buttons-container * {
+  pointer-events: none;
+}
+
+.uvs-skip-button {
+  pointer-events: all;
+}
+
+/* Animation for showing overlay buttons */
+.uvs-skip-buttons-container.uvs-overlay-mode.uvs-visible {
+  animation: uvs-slide-in 0.2s ease-out;
+}
+
+@keyframes uvs-slide-in {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .uvs-skip-button {
+    border: 2px solid #fff;
+    background: #000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .uvs-skip-button,
+  .uvs-skip-buttons-container {
+    transition: none;
+  }
+
+  .uvs-skip-button:hover {
+    transform: none;
+  }
+
+  @keyframes uvs-slide-in {
+    from, to {
+      transform: none;
+    }
+  }
+}
